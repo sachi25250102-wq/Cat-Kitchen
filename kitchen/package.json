@@ -1,0 +1,12 @@
+{
+  "name": "xiaoman-kitchen",
+  "version": "1.0.0",
+  "private": true,
+  "description": "小满食堂：原创中文离线单机烹饪游戏，双击 index.html 即可运行",
+  "scripts": {
+    "test": "node --test tests/menu.test.cjs tests/engine.test.cjs tests/session.test.cjs tests/standalone.test.cjs",
+    "check": "node --check menu.js && node --check engine.js && node --check session.js && node --check art.js && node --check sfx.js && node --check stage.js && node --check game.js",
+    "e2e": "node e2e/smoke.cjs",
+    "standalone": "node scripts/build-standalone.cjs"
+  }
+}

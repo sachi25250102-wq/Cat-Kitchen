@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#382c2a">
+  <title>小满食堂</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 像素小图标，HUD 与按钮复用 -->
+  <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <symbol id="i-clock" viewBox="0 0 10 10">
+      <path fill="#fff1d2" d="M3 0h4v1h1v1h1v1h1v4H9v1H8v1H7v1H3V9H2V8H1V7H0V3h1V2h1V1h1z"/>
+      <path fill="#382c2a" d="M4 2h1v4H4zM5 5h3v1H5z"/>
+    </symbol>
+    <symbol id="i-coin" viewBox="0 0 10 10">
+      <path fill="#f1ba67" d="M3 0h4v1h1v1h1v1h1v4H9v1H8v1H7v1H3V9H2V8H1V7H0V3h1V2h1V1h1z"/>
+      <path fill="#d88b49" d="M4 2h2v6H4z"/>
+      <path fill="#fff1d2" d="M2 2h1v1H2z"/>
+    </symbol>
+    <symbol id="i-star" viewBox="0 0 10 10">
+      <path fill="#fff1d2" d="M4 0h2v2h1v1h3v1H9v1H8v2h1v2H8V8H6V7H4v1H2v1H1V7h1V5H1V4H0V3h3V2h1z"/>
+    </symbol>
+    <symbol id="i-flame" viewBox="0 0 10 10">
+      <path fill="#f1ba67" d="M5 0h1v2h1v1h1v2h1v3H8v1H7v1H3V9H2V8H1V5h1V4h1V2h1V1h1z"/>
+      <path fill="#c55743" d="M4 5h2v1h1v2H6v1H4V8H3V6h1z"/>
+    </symbol>
+    <symbol id="i-pause" viewBox="0 0 10 10">
+      <path d="M2 1h2v8H2zM6 1h2v8H6z"/>
+    </symbol>
+    <symbol id="i-sound-on" viewBox="0 0 10 10">
+      <path d="M0 3h2v4H0zM2 2h1v6H2zM3 1h1v8H3zM4 0h1v10H4zM6 3h1v4H6zM8 1h1v8H8z"/>
+    </symbol>
+    <symbol id="i-sound-off" viewBox="0 0 10 10">
+      <path d="M0 3h2v4H0zM2 2h1v6H2zM3 1h1v8H3zM4 0h1v10H4zM6 3h1v1H6zM7 4h1v2H7zM6 6h1v1H6zM8 6h1v1H8zM9 7h1v1H9zM8 3h1v1H8zM9 2h1v1H9z"/>
+    </symbol>
+    <symbol id="i-arrow" viewBox="0 0 10 10">
+      <path d="M4 0h2v1h1v1h1v1h1v2H7v5H3V5H1V3h1V2h1V1h1z"/>
+    </symbol>
+  </svg>
+
+  <div class="game" id="game" data-screen="title" data-step="select" data-phase="menu">
+
+    <!-- 营业画面：厨房舞台 + 订单夹 + 操作栏 -->
+    <main class="play" id="play">
+      <div class="stage-wrap">
+        <div class="stage" id="stage">
+          <canvas class="stage-canvas" id="stageCanvas" width="1536" height="1024" role="img"
+                  aria-label="小满食堂的厨房：猫厨师站在木柜台后面，窗外是樱花"></canvas>
+
+          <div class="hud" id="hud">
+            <div class="hud-stats">
+              <span class="hud-item hud-day" id="hudDay">第 1 天</span>
+              <span class="hud-item hud-time" id="hudTimeWrap">
+                <svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg>
+                <span class="hud-label">剩余</span><b id="hudTime">90</b><span class="hud-unit" id="hudTimeUnit">秒</span>
+              </span>
+              <span class="hud-item">
+                <svg class="ico" aria-hidden="true"><use href="#i-coin"/></svg>
+                <span class="hud-label">金币</span><b id="hudCoins">0</b>
+              </span>
+              <span class="hud-item">
+                <svg class="ico" aria-hidden="true"><use href="#i-star"/></svg>
+                <span class="hud-label">得分</span><b id="hudScore">0</b>
+              </span>
+              <span class="hud-item hud-combo" id="hudComboWrap" hidden>
+                <svg class="ico" aria-hidden="true"><use href="#i-flame"/></svg>
+                <span class="hud-label">连击</span><b id="hudCombo">0</b>
+              </span>
+            </div>
+            <div class="hud-tools">
+              <button type="button" class="tool" id="btnPause" aria-label="暂停" title="暂停（Esc）">
+                <svg class="ico" aria-hidden="true"><use href="#i-pause"/></svg>
+              </button>
+              <button type="button" class="tool" id="btnHelpHud" aria-label="怎么玩" title="怎么玩（H）">?</button>
+              <button type="button" class="tool" id="btnSoundHud" aria-label="声音" aria-pressed="true" title="声音（M）">
+                <svg class="ico" aria-hidden="true"><use id="soundHudIcon" href="#i-sound-on"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="rice-board" id="riceBoard" hidden>
+            <span><strong id="riceCount"></strong> <small id="riceRefill"></small></span>
+            <button type="button" class="counter-btn" id="feedPest" hidden>喂饭 <kbd>G</kbd></button>
+            <span class="helper-note" id="helperNote" hidden>麻雀等着帮忙出餐</span>
+          </div>
+
+          <!-- 当前动作提示：随步骤切换 -->
+          <p class="cue cue-pick" id="cuePick">先选一张订单</p>
+          <div class="cue cue-chop" id="cueChop" aria-hidden="true"></div>
+          <div class="cue cue-heat" id="cueHeat" aria-hidden="true">
+            <div class="heat-track">
+              <span class="heat-zone heat-good"></span>
+              <span class="heat-zone heat-perfect"></span>
+              <span class="heat-burn"></span>
+              <span class="heat-needle" id="heatNeedle"></span>
+            </div>
+            <div class="heat-scale"><span>生</span><span class="heat-scale-mid">绿色出锅</span><span>糊</span></div>
+          </div>
+          <p class="cue cue-serve" id="cueServe"><kbd>空格</kbd>出餐</p>
+          <div class="dual-pots" id="dualPots" aria-label="两口锅的火候" hidden></div>
+
+          <button type="button" class="pest" id="pestBtn" hidden aria-label="赶走小馋鬼">
+            <span class="pest-tip"><kbd>F</kbd>赶走</span>
+            <span class="pest-timer"><span class="pest-timer-fill" id="pestFill"></span></span>
+          </button>
+
+          <div class="floats" id="floats" aria-hidden="true"></div>
+          <div class="banner" id="banner" aria-hidden="true"><span id="bannerText"></span></div>
+        </div>
+      </div>
+
+      <aside class="rail" aria-label="订单">
+        <h2 class="rail-title">订单</h2>
+        <ol class="tickets" id="tickets"></ol>
+        <div class="tally">
+          <p class="tally-count">今日出餐 <b id="tallyServed">0</b> 道</p>
+          <p class="tally-stars" id="tallyStars" role="img" aria-label="目前 0 星"><i>★</i><i>★</i><i>★</i></p>
+          <p class="tally-next" id="tallyNext">出餐 1 道拿到第一颗星。</p>
+        </div>
+      </aside>
+
+      <section class="workbench" id="workbench" aria-label="订单操作" hidden>
+        <div class="combo-panel" id="comboPanel" hidden>
+          <strong>双拼</strong>
+          <div class="combo-dishes" id="comboDishes"></div>
+          <small id="comboHint"></small>
+        </div>
+        <div class="taste-panel" id="tastePanel" hidden>
+          <p id="tasteRequest"></p>
+          <div class="taste-controls">
+            <label>食材 <select id="tasteIngredient" aria-label="食材"></select></label>
+            <label>做法 <select id="tasteMethod" aria-label="做法"></select></label>
+            <button type="button" class="counter-btn" id="confirmTaste">确认配方</button>
+            <button type="button" class="counter-btn" id="openRecipeBook">看菜谱</button>
+          </div>
+        </div>
+        <div class="bento-panel" id="bentoPanel" hidden>
+          <div class="bento-grid" id="bentoGrid" aria-label="便当格，四列三行"></div>
+          <div class="bento-info">
+            <p id="bentoHint">选菜、旋转，再点一格摆放。</p>
+            <div class="bento-pieces" id="bentoPieces" aria-label="便当菜品"></div>
+            <div class="bento-actions">
+              <button type="button" class="counter-btn" id="rotateBento">旋转 <kbd>R</kbd></button>
+              <button type="button" class="counter-btn" id="removeBento">移除</button>
+              <button type="button" class="counter-btn" id="clearBento">清空</button>
+              <button type="button" class="counter-btn" id="serveBento">出餐</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bar" aria-label="操作">
+        <div class="bar-info">
+          <ol class="steps" id="steps" aria-label="做菜步骤">
+            <li data-step="select"><span class="step-no">1</span>选单</li>
+            <li data-step="chop"><span class="step-no">2</span>切菜</li>
+            <li data-step="cook"><span class="step-no">3</span>控火</li>
+            <li data-step="ready"><span class="step-no">4</span>出餐</li>
+          </ol>
+          <p class="active-recipe" id="activeRecipe" hidden></p>
+          <p class="feedback" id="feedback" role="status" aria-live="polite" data-tone="info"></p>
+        </div>
+        <div class="pad" id="pad">
+          <div class="dpad" role="group" aria-label="切菜方向">
+            <button type="button" class="key key-up" data-dir="up" aria-label="向上切（↑ 或 W）">
+              <svg class="arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </button>
+            <button type="button" class="key key-left" data-dir="left" aria-label="向左切（← 或 A）">
+              <svg class="arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </button>
+            <button type="button" class="key key-down" data-dir="down" aria-label="向下切（↓ 或 S）">
+              <svg class="arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </button>
+            <button type="button" class="key key-right" data-dir="right" aria-label="向右切（→ 或 D）">
+              <svg class="arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </button>
+          </div>
+          <button type="button" class="key key-act" id="btnAction" data-act="action">
+            <span class="key-main" id="actionLabel">出锅</span><span class="key-hint">空格</span>
+          </button>
+          <button type="button" class="key key-shoo" id="btnShoo" data-act="shoo">
+            <span class="key-main">赶走</span><span class="key-hint">F</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- 标题画面 -->
+    <section class="title" id="titleScreen" aria-labelledby="titleName">
+      <header class="sign">
+        <canvas class="sign-art" id="titleArt" width="132" height="34" aria-hidden="true"></canvas>
+        <h1 class="sign-name" id="titleName">小满食堂</h1>
+        <p class="sign-sub">切菜、控火、出餐，把樱花巷口的小店开满五天。</p>
+      </header>
+
+      <nav class="tags" id="titleTags" aria-label="主菜单">
+        <button type="button" class="tag tag-main" id="btnStart" data-autofocus>
+          <span class="tag-text" id="startText">开店营业</span>
+          <span class="tag-note" id="startNote">第一天</span>
+        </button>
+        <button type="button" class="tag" id="btnPractice">
+          <span class="tag-text">练习模式</span>
+          <span class="tag-note">不计时</span>
+        </button>
+        <button type="button" class="tag" id="btnHelp">
+          <span class="tag-text">怎么玩</span>
+          <span class="tag-note">规则键位</span>
+        </button>
+        <button type="button" class="tag" id="btnSound" aria-pressed="true">
+          <span class="tag-text">声音</span>
+          <span class="tag-note" id="soundNote">已开启</span>
+        </button>
+        <button type="button" class="tag tag-quiet" id="btnReset" hidden>
+          <span class="tag-text">重新开始</span>
+          <span class="tag-note">清空五天</span>
+        </button>
+      </nav>
+
+      <footer class="ledger" id="ledger">
+        <dl class="records" aria-label="小店记录">
+          <div><dt>最高分</dt><dd id="recScore">0</dd></div>
+          <div><dt>最高连击</dt><dd id="recCombo">0</dd></div>
+          <div><dt>累计出餐</dt><dd id="recServed">0</dd></div>
+          <div><dt>钱包</dt><dd id="recWallet">0</dd></div>
+        </dl>
+        <div class="ledger-actions">
+          <button type="button" id="btnPracticeDays">选择练习日</button>
+          <button type="button" id="btnLeaderboard">本机排行榜</button>
+        </div>
+        <p class="storage-note" id="storageNote" hidden>浏览器没有开放本地存储，这次的进度关掉页面后不会保留。</p>
+      </footer>
+    </section>
+
+    <!-- 弹层 -->
+    <div class="veil" id="veil" hidden>
+
+      <section class="sheet sheet-pause" id="pauseSheet" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" tabindex="-1" hidden>
+        <header class="sign sign-small">
+          <h2 class="sign-word" id="pauseTitle">休息中</h2>
+          <p class="sign-sub" id="pauseNote">营业时间、火候和订单都停住了。</p>
+        </header>
+        <nav class="tags" aria-label="暂停菜单">
+          <button type="button" class="tag tag-main" id="btnResume" data-autofocus>
+            <span class="tag-text" id="resumeText">继续营业</span>
+            <span class="tag-note">Esc</span>
+          </button>
+          <button type="button" class="tag" id="btnRestartShift">
+            <span class="tag-text">重新开始</span>
+            <span class="tag-note" id="restartNote">今天重来</span>
+          </button>
+          <button type="button" class="tag" id="btnHelpPause">
+            <span class="tag-text">怎么玩</span>
+            <span class="tag-note">规则键位</span>
+          </button>
+          <button type="button" class="tag" id="btnSoundPause" aria-pressed="true">
+            <span class="tag-text">声音</span>
+            <span class="tag-note" id="soundNotePause">已开启</span>
+          </button>
+          <button type="button" class="tag tag-quiet" id="btnLeave">
+            <span class="tag-text" id="leaveText">回到菜单</span>
+            <span class="tag-note" id="leaveNote">放弃今天</span>
+          </button>
+        </nav>
+      </section>
+
+      <section class="sheet sheet-paper sheet-help" id="helpSheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle" tabindex="-1" hidden>
+        <h2 class="sheet-title" id="helpTitle">怎么玩</h2>
+        <ol class="howto">
+          <li>
+            <h3>选单</h3>
+            <p>点右侧的订单，或按 <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>。客人的耐心条走完，这单就丢了。</p>
+          </li>
+          <li>
+            <h3>切菜</h3>
+            <p>照着箭头的顺序按 <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> 或 <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>。按错要从第一个重来。</p>
+          </li>
+          <li>
+            <h3>控火</h3>
+            <p>指针走进绿色时按 <kbd>空格</kbd> 出锅，中间金色那一小段是完美火候。指针走到头会糊锅，要重新切菜。</p>
+          </li>
+          <li>
+            <h3>出餐</h3>
+            <p>再按一次 <kbd>空格</kbd> 把料理送出去。连续出餐不失误，小费越给越多。</p>
+          </li>
+        </ol>
+        <dl class="notes">
+          <div><dt>小馋鬼</dt><dd>麻雀或狸猫跳上柜台时，按 <kbd>F</kbd> 或直接点它。5 秒内赶走有奖励，赶不走客人会更着急。</dd></div>
+          <div><dt>第 2 天 · 双灶</dt><dd>两锅各有火候，切下一道菜时也会继续升温。点锅下的火候条，或按 <kbd>Q</kbd> / <kbd>E</kbd> 出锅。</dd></div>
+          <div><dt>第 3 天 · 双拼</dt><dd>点菜名切换要做的那道，两道都热着才能一起出餐。</dd></div>
+          <div><dt>第 4 天 · 口味和米饭</dt><dd>按客人的要求选食材和做法。米饭会自动补上，也可以喂麻雀一份饭，请它帮你送下一单。</dd></div>
+          <div><dt>第 5 天 · 便当</dt><dd>选一份菜，旋转后点格子放入便当。右下角留给甜点，菜放齐才可出餐。</dd></div>
+          <div><dt>营业</dt><dd>一共五天，每天 90 秒。打烊后用赚到的金币添置升级。练习模式不计时，也不记收入。</dd></div>
+          <div><dt>其他按键</dt><dd><kbd>Esc</kbd> 暂停，<kbd>H</kbd> 打开这页，<kbd>M</kbd> 开关声音。手机上用屏幕下方的按钮。</dd></div>
+        </dl>
+        <div class="sheet-actions">
+          <button type="button" class="btn" id="helpRecipeBook">看菜谱</button>
+          <button type="button" class="btn btn-main" id="btnHelpClose" data-autofocus>知道了</button>
+        </div>
+      </section>
+
+      <section class="sheet sheet-paper" id="practiceSheet" role="dialog" aria-modal="true" aria-labelledby="practiceTitle" tabindex="-1" hidden>
+        <h2 class="sheet-title" id="practiceTitle">选择练习日</h2>
+        <p class="sheet-intro">所有天数都能直接练习。不限营业时间，不计入存档。</p>
+        <div class="practice-options" id="practiceOptions">
+          <button type="button" class="counter-btn" data-practice-day="1" data-autofocus>第 1 天 <small>切菜和控火</small></button>
+          <button type="button" class="counter-btn" data-practice-day="2">第 2 天 <small>两口灶</small></button>
+          <button type="button" class="counter-btn" data-practice-day="3">第 3 天 <small>双拼保温</small></button>
+          <button type="button" class="counter-btn" data-practice-day="4">第 4 天 <small>口味和米饭</small></button>
+          <button type="button" class="counter-btn" data-practice-day="5">第 5 天 <small>摆便当</small></button>
+        </div>
+        <div class="sheet-actions"><button type="button" class="btn" id="btnPracticeClose">返回</button></div>
+      </section>
+
+      <section class="sheet sheet-paper" id="recipeSheet" role="dialog" aria-modal="true" aria-labelledby="recipeTitle" tabindex="-1" hidden>
+        <h2 class="sheet-title" id="recipeTitle">今日菜谱</h2>
+        <p class="sheet-intro">对照食材、做法和口味，挑一道符合客人要求的菜。</p>
+        <ul class="recipe-list" id="recipeList"></ul>
+        <div class="sheet-actions"><button type="button" class="btn btn-main" id="btnRecipeClose" data-autofocus>返回</button></div>
+      </section>
+
+      <section class="sheet sheet-paper sheet-leaderboard" id="leaderboardSheet" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle" tabindex="-1" hidden>
+        <h2 class="sheet-title" id="leaderboardTitle">本机排行榜</h2>
+        <div class="rank-toggle rank-scope" id="rankScope" role="group" aria-label="排行范围" hidden>
+          <button type="button" class="counter-btn" id="rankLocal" aria-pressed="true" aria-controls="rankResults">本机</button>
+          <button type="button" class="counter-btn" id="rankShared" aria-pressed="false" aria-controls="rankResults">共享</button>
+        </div>
+        <div class="rank-toggle" role="group" aria-label="排行类型">
+          <button type="button" class="counter-btn" id="rankDaily" aria-pressed="true" aria-controls="rankResults">单日</button>
+          <button type="button" class="counter-btn" id="rankCampaign" aria-pressed="false" aria-controls="rankResults">五天总分</button>
+        </div>
+        <form class="rank-submit" id="rankSubmitForm" hidden>
+          <div class="rank-submit-controls">
+            <label for="rankNickname">昵称</label>
+            <input type="text" id="rankNickname" maxlength="32" autocomplete="nickname" placeholder="1–16 个字符" aria-describedby="rankSubmitStatus">
+            <button type="submit" class="counter-btn" id="btnSubmitScore">提交本局成绩</button>
+          </div>
+          <p id="rankSubmitStatus" role="status" hidden></p>
+        </form>
+        <div id="rankResults">
+          <p class="rank-status" id="rankStatus" role="status" hidden></p>
+          <button type="button" class="counter-btn" id="rankRetry" hidden>重试加载</button>
+          <p class="rank-empty" id="rankEmpty" role="status" hidden></p>
+          <table class="rank-table" id="rankTable" aria-label="单日得分排行">
+            <thead><tr><th scope="col">排名</th><th scope="col">营业场次</th><th scope="col">得分</th></tr></thead>
+            <tbody id="rankRows"></tbody>
+          </table>
+        </div>
+        <div class="sheet-actions"><button type="button" class="btn" id="btnLeaderboardClose">返回</button></div>
+      </section>
+
+      <section class="sheet sheet-paper sheet-bill" id="billSheet" role="dialog" aria-modal="true" aria-labelledby="billTitle" tabindex="-1" hidden>
+        <header class="bill-head">
+          <p class="bill-shop">小满食堂 日结单</p>
+          <h2 class="sheet-title" id="billTitle">第 1 天打烊</h2>
+          <p class="bill-stars" id="billStars" role="img" aria-label="评价 0 星"></p>
+          <p class="bill-hint" id="billHint"></p>
+        </header>
+        <dl class="bill-ranking" aria-label="本机排名">
+          <div><dt>本局得分</dt><dd id="billDailyRank"></dd></div>
+          <div id="billCampaignResult" hidden><dt>五天总分</dt><dd id="billCampaignRank"></dd></div>
+        </dl>
+        <dl class="bill-lines" id="billLines"></dl>
+        <dl class="bill-total">
+          <div><dt>今日收入</dt><dd id="billIncome">+0 金币</dd></div>
+          <div><dt>钱包</dt><dd id="billWallet">0 金币</dd></div>
+        </dl>
+        <section class="shop" id="shop" aria-labelledby="shopTitle">
+          <h3 class="shop-title" id="shopTitle">添置点什么</h3>
+          <ul class="shop-list" id="shopList"></ul>
+        </section>
+        <section class="finale" id="finale" hidden>
+          <h3 class="shop-title">五天总账</h3>
+          <dl class="bill-lines" id="finaleLines"></dl>
+        </section>
+        <p class="storage-note" id="billStorageNote" hidden>浏览器没有开放本地存储，这次的进度关掉页面后不会保留。</p>
+        <div class="sheet-actions">
+          <button type="button" class="btn btn-main" id="btnNextDay">开始第 2 天</button>
+          <button type="button" class="btn" id="btnBillRestart" hidden>重新开始五天</button>
+          <button type="button" class="btn" id="btnBillLeaderboard">看排行榜</button>
+          <button type="button" class="btn" id="btnBillTitle">回到菜单</button>
+        </div>
+      </section>
+
+      <section class="sheet sheet-paper sheet-confirm" id="confirmSheet" role="alertdialog" aria-modal="true" aria-labelledby="confirmText" tabindex="-1" hidden>
+        <p class="confirm-text" id="confirmText"></p>
+        <div class="sheet-actions">
+          <button type="button" class="btn btn-main" id="btnConfirmOk">确定</button>
+          <button type="button" class="btn" id="btnConfirmCancel" data-autofocus>取消</button>
+        </div>
+      </section>
+    </div>
+
+    <p class="toast" id="toast" role="status" aria-live="polite" hidden></p>
+  </div>
+
+  <noscript>
+    <p class="noscript">小满食堂需要启用 JavaScript 才能运行。请在浏览器设置里允许本页面运行脚本后刷新。</p>
+  </noscript>
+
+  <script src="menu.js"></script>
+  <script src="engine.js"></script>
+  <script src="session.js"></script>
+  <script src="art.js"></script>
+  <script src="sfx.js"></script>
+  <script src="stage.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
